@@ -6,7 +6,7 @@ import scipy.signal as sc
 
 
 #hente inn data fra måling
-sample_period, data = raspi_import('1000Hz_sinus.bin')
+sample_period, data = raspi_import('1000Hz_sinus_2.bin')
 
 #juster data
 k= 3.3/4096 #2^12 pga 12-bits ADC bit_signal = Signal/k
@@ -32,21 +32,21 @@ def delay(x, r_xy): #tar inn parametere x:ett av signalene, r_xy:krysskorrelsjon
     r_xy_abs = np.abs(r_xy)
     l_max = np.argmax(r_xy_abs) - (len(x) - 1)
     delta_t = l_max/fs
-    print(delta_t)
+    print(f" delay: {delta_t}")
     return delta_t
 
 #teori
-t = np.linspace(-5,5, 1000)*np.pi*2
+""" t = np.linspace(-5,5, 1000)*np.pi*2
 r_11 = krysskorrelasjon(np.sinc(t+2),np.sinc(t+1))
 
 plt.plot(np.sinc(t))
 plt.plot(np.sinc(t+1))
 plt.plot(r_11)
-plt.show()
+plt.show() """
 
 
 #med seg selv
-r_11 = krysskorrelasjon(mic_1,mic_3) 
+r_11 = krysskorrelasjon(mic_3,mic_2) 
 
 #mellom mikrofonene
 """ r_12 = krysskorrelasjon(mic_1,mic_2)
