@@ -33,29 +33,36 @@ def delay(x, r_xy): #tar inn parametere x:ett av signalene, r_xy:krysskorrelsjon
     l_max = np.argmax(r_xy_abs) - (len(x) - 1)
     delta_t = l_max/fs
     print(f" delay: {delta_t}")
-    return delta_t
+    return delta_t #enhet sekunder
 
-#teori
-""" t = np.linspace(-5,5, 1000)*np.pi*2
+def delay_samples(x, y):
+    n_samples = np.argmax(krysskorrelasjon(x,y)) - len(data)
+    return n_samples #enhet antall samples
+
+#teoretisk
+t = np.linspace(-5,5, 1000)*np.pi*2
 r_11 = krysskorrelasjon(np.sinc(t+2),np.sinc(t+1))
 
 plt.plot(np.sinc(t))
 plt.plot(np.sinc(t+1))
 plt.plot(r_11)
-plt.show() """
+plt.show()
 
-
-#med seg selv
-r_11 = krysskorrelasjon(mic_3,mic_2) 
 
 #mellom mikrofonene
-""" r_12 = krysskorrelasjon(mic_1,mic_2)
-r_13 = krysskorrelasjon(mic_1,mic_3)
+r_12 = krysskorrelasjon(mic_1,mic_2)
+""" r_13 = krysskorrelasjon(mic_1,mic_3)
 r_23 = krysskorrelasjon(mic_1,mic_1) """
 
 print(f"lengden på data: {len(data)}")
-print(f"lengden på krysskorrelasjeonen: {len(r_11)}")
-print(f"delay mellom : {delay(mic_1,r_11)}")
-print(f"spike ved sample nr: {np.argmax(r_11)}")
+print(f"lengden på krysskorrelasjeonen: {len(r_12)}")
+print(f"delay mellom : {delay(mic_1,r_12)}")
+print(f"spike ved sample nr: {np.argmax(r_12)}")
+
+plt.plot(r_12)
+plt.show()
+
+#med seg selv (autokorrelakson)
+r_11 = krysskorrelasjon(mic_1,mic_1) 
 plt.plot(r_11)
 plt.show()
