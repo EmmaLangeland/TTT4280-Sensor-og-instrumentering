@@ -2,10 +2,10 @@ import numpy as np
 
 #Stoler ikke på denne heller:)
 def theta(n_21, n_31, n_32):
-    if ((n_31 - n_21 + 2*n_32) >= 0):
-        theta = (np.arctan2(np.sqrt(3) * (n_31 + n_21), ((n_31 - n_21 + 2*n_32) + 1e-10))) # legger til + 1e-10 for å ikke dele på 0 i arctan funk
+    if ((n_31 - n_21 + 2*n_32) < 0):
+        theta = (np.arctan2(np.sqrt(3) * (n_31 + n_21), ((n_31 - n_21 + 2*n_32) + 1e-10))) + np.pi # legger til + 1e-10 for å ikke dele på 0 i arctan funk
     else:
-        theta = (np.arctan2(np.sqrt(3) * (n_31 + n_21), ((n_31 - n_21 + 2*n_32) + 1e-10))) + np.pi
+        theta = (np.arctan2(np.sqrt(3) * (n_31 + n_21), ((n_31 - n_21 + 2*n_32) + 1e-10)))
 
     theta = theta * (180/np.pi)  
     #print(f"Innfallsvinkelen theta er på {theta} grader\n\n\n")
@@ -20,7 +20,7 @@ v_33 = theta(0,5,4) # Gir samme verdi for + og - 5 og 4
 v_330 = theta(5,0,-5) # skal være ca. 210, men ga 330
 v = theta(0,-5,-5) # skal være ca. 150, men ga 30
 
-v = theta(0,5,5) # skal være ca. 210, men ga 330
+v = theta(-3,-3,-1) # skal være ca....
 
 print(v)
 
