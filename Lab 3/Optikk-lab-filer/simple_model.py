@@ -10,6 +10,7 @@ blue_wavelength = 460 # Replace with wavelength in nanometres
 
 wavelength = np.array([red_wavelength, green_wavelength, blue_wavelength])
 
+
 def mua_blood_oxy(x): return np.interp(x, muabo[:, 0], muabo[:, 1])
 def mua_blood_deoxy(x): return np.interp(x, muabd[:, 0], muabd[:, 1])
 
@@ -33,11 +34,23 @@ musr = 100 * (17.6*(wavelength/500)**-4 + 18.78*(wavelength/500)**-0.22)
 # mua and musr are now available as shape (3,) arrays
 # Red, green and blue correspond to indexes 0, 1 and 2, respectively
 
-# Calculate penetration depth
 
+# Calculate penetration depth
 def delta(mu_s_p,mu_a):
     d = np.sqrt((1)/(3*(mu_s_p+mu_a)*mu_a))
     return d
 
 d = delta(musr,mua)
 print("Penetration depth is: ", d)
+
+
+
+#konstanter
+C = np.sqrt(3*mua*(mua+musr))
+d = 0.011 #m
+def Transmittans(d):
+    np.exp(-C*d)
+    return np.exp(-C*d)
+
+T = Transmittans(d) * 100
+print("Transmittans is: ", T, "%")
