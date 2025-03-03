@@ -15,6 +15,7 @@ def mua_blood_oxy(x): return np.interp(x, muabo[:, 0], muabo[:, 1])
 def mua_blood_deoxy(x): return np.interp(x, muabd[:, 0], muabd[:, 1])
 
 bvf = 0.01 # Blood volume fraction, average blood amount in tissue
+bvf_100 = 1 # Blood volume fraction, average blood amount in tissue på 100%
 oxy = 0.8 # Blood oxygenation
 
 # Absorption coefficient ($\mu_a$ in lab text)
@@ -23,6 +24,8 @@ mua_other = 25 # Background absorption due to collagen, et cetera
 mua_blood = (mua_blood_oxy(wavelength)*oxy # Absorption due to
             + mua_blood_deoxy(wavelength)*(1-oxy)) # pure blood
 mua = mua_blood*bvf + mua_other
+
+mua_100p = mua_blood*bvf_100 + mua_other
 
 # reduced scattering coefficient ($\mu_s^\prime$ in lab text)
 # the numerical constants are thanks to N. Bashkatov, E. A. Genina and
@@ -47,10 +50,31 @@ print("Penetration depth is: ", d)
 
 #konstanter
 C = np.sqrt(3*mua*(mua+musr))
-d = 0.011 #m
-def Transmittans(d):
+C_100p = np.sqrt(3*mua_100p*(mua_100p+musr))
+
+def Transmittans(d,C):
     np.exp(-C*d)
     return np.exp(-C*d)
 
-T = Transmittans(d) * 100
-print("Transmittans is: ", T, "%")
+d_finger = 0.011 #Tykkelsen til fingeren (m)
+
+T = Transmittans(d_finger,C) * 100 #i prosent
+print("Transmittans gjennom fingeren er: ", T, "%")
+
+
+#lys gjennom blodåre
+
+d_blod = 300 * 10**(-6) #Tykkelsen til blodåren (m)
+
+T_blodare_100p = Transmittans(d_blod, C_100p) *100 #i prosent
+T_blodare_1p = Transmittans(d_blod, C) *100 #i prosent
+print("Transmitans gjennom blodåren med 100 prosent fraktans: ",T_blodare_100p, "%")
+print("Transmitans gjennom blodåren med 1 prosent fraktans: ",T_blodare_1p, "%")
+
+#Kontrast
+def Kontrast(T_høyt, T_lavt):
+    K = (np.abs(T_høyt - T_lavt))/(T_lavt)
+    return K
+
+Kontrast_blod = Kontrast(T_blodare_100p,T_blodare_1p)
+print("Kontrasten er: ",Kontrast_blod)
