@@ -28,8 +28,8 @@ if len(sys.argv) < 3:
     print("")
     print("Usage:\npython " + sys.argv[0] + " [path to input video file] [path to output data file]")
     exit()
-filename = sys.argv[1]
-output_filename = sys.argv[2]
+filename = sys.argv[1] #1
+output_filename = sys.argv[2] #2
 
 #read video file
 cap = cv2.VideoCapture(filename, cv2.CAP_FFMPEG)
