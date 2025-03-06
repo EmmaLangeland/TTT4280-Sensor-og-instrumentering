@@ -17,6 +17,9 @@ Requirements:
     install them (locally for your user) using pip:
     - pip install opencv-python
     - (or pip3 install opencv-python)
+
+    RUN WITH:   python read_video_from_roi.py [Input file name] [Output file name]
+                python read_video_from_roi.py Pulse_test_3.mp4 Pulse_test_3.txt   
 """
 import sys
 import cv2
