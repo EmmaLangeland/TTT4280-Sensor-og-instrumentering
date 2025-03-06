@@ -35,16 +35,13 @@ Blue_filtrert = digitalt_filter(4, 20, 100, Blue)
 
 
 
-def digitalt_filter(N, high_freq, data_2B_filtered): #N er orden på filteret 
+def digitalt_filter(high_freq, data_2B_filtered): 
+    N = 4 #N er orden på filteret 
     nyquist = fs / 2  #Normaliserer frekvensen
     high = high_freq / nyquist  
     filter_coefficients = sc.butter(N, high, "low") #python tupple with coeffs
     filtrert_data = sc.lfilter(filter_coefficients[0], filter_coefficients[1], data_2B_filtered)
     return filtrert_data #er et array
-
-Red_filtrert = digitalt_filter(4, 3, Red)
-Green_filtrert = digitalt_filter(4, 3, Green)
-Blue_filtrert = digitalt_filter(4, 3, Blue)
 
 
 # =================== Regne ut puls med FFT ===================
@@ -53,9 +50,6 @@ def fft(data_kanal):
     data_fft = np.fft.fft(data_kanal, Nfft)
     return np.abs(data_fft)
 
-Green_fft = fft(Green)
-Blue_fft = fft(Blue)
-Red_fft = fft(Red)
 
 # =================== Regne ut puls med autocorrelasjon ===================
 def autocorrelasjon(data_kanal):
@@ -66,36 +60,52 @@ def autocorrelasjon(data_kanal):
 def find_puls_auto(data_kanal):
     rxy = autocorrelasjon(data_kanal)
     peaks_indices = sc.find_peaks(rxy,height = 0.4, threshold=None)
-    print(peaks_indices)
-
-Green_autocorr = autocorrelasjon(Green)
-Blue_autocorr = autocorrelasjon(Blue)
-Red_autocorr = autocorrelasjon(Red)
-
+    print(peaks_indices)  #denne på jobbes litt mer med, den finner ikke puls nå uten å gjøre mer matematikk
 
 
 
 #Plot raw data
-plt.plot(Red, "r")
-plt.plot(Green, "g")
-plt.plot(Blue, "b")
-plt.show()
+def plot_rådata():
+    plt.plot(Red, "r")
+    plt.plot(Green, "g")
+    plt.plot(Blue, "b")
+    plt.show()
 
 #Plot av filtrert data
-plt.plot(Red_filtrert, "r")
-plt.plot(Green_filtrert, "g")
-plt.plot(Blue_filtrert, "b")
-plt.show()
+def plot_filtrert_data():
+    Red_filtrert = digitalt_filter(3, Red)
+    Green_filtrert = digitalt_filter(3, Green)
+    Blue_filtrert = digitalt_filter(3, Blue)
+
+    plt.plot(Red_filtrert, "r")
+    plt.plot(Green_filtrert, "g")
+    plt.plot(Blue_filtrert, "b")
+    plt.show()
 
 #Plot FFT
-plt.plot(Blue_fft, "b")
-plt.plot(Red_fft, "r")
-plt.plot(Green_fft, "g")
-plt.show()
+def plot_FFT(data_kanal):
+    signallengde_frames = len(data_kanal)
+    frames = np.arange(0, len(data_kanal))
+    signallengde_tid = signallengde_frames/30 #fps
+    frekvens_resolution = 1/signallengde_tid # 1/sek = Hz
+    freqs = frekvens_resolution*frames #datapunkter i frames*Hz
+    bpm = freqs*60 #konverterer fra frekvens til bmp
+
+    
+    plt.plot(bpm, fft(Red), "r")
+    plt.plot(bpm, fft(Green), "g")
+    plt.plot(bpm, fft(Blue), "b")
+    plt.show()
+
 
 #Plot Autocorrelasjon
-plt.plot(Blue_autocorr, "b")
-plt.plot(Red_autocorr, "r")
-plt.plot(Green_autocorr, "g")
-plt.show()
+def plot_autocorr(data_kanal): #her kan man ta inn rå eller filtrert data
+    Green_autocorr = autocorrelasjon(data_kanal)
+    Blue_autocorr = autocorrelasjon(data_kanal)
+    Red_autocorr = autocorrelasjon(data_kanal)
+
+    plt.plot(Blue_autocorr, "b")
+    plt.plot(Red_autocorr, "r")
+    plt.plot(Green_autocorr, "g")
+    plt.show()
 
