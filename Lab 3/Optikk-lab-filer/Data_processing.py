@@ -5,6 +5,7 @@ import scipy.signal as sc
 
 # =================== Variables ===================
 filename = "Pulse_test_2.txt"
+filnavn_lst = ["maling1", "maling2", "m3",  "m4", "m5"]
 fs = 30 #funnet ved å ta lengden på data og dele på tiden spilt inn, også mulig å lese av i terminalen etter kjørt roi.py filen
 
 # =================== Import text file ===================
@@ -19,6 +20,15 @@ def file_to_data(filnavn):
     #time = np.arange(len(data))
     data_kanaler = [Red, Green, Blue]
     return data_kanaler
+
+def data_to_bpm(data_kanal):
+    signallengde_frames = len(data_kanal)
+    frames = np.arange(0, signallengde_frames)
+    signallengde_tid = signallengde_frames/30 #fps
+    frekvens_resolution = 1/signallengde_tid # 1/sek = Hz
+    freqs = frekvens_resolution*frames #datapunkter i frames*Hz
+    bpm = freqs*60 #konverterer fra frekvens til bmp
+    return bpm
 
 
 # =================== Filtrere data med båndpass Butterworth filter ===================
@@ -52,6 +62,14 @@ def fft(data_kanal):
     data_fft = np.fft.fft(data_kanal, Nfft)
     return np.abs(data_fft)
 
+def find_puls_fft(data_kanal): #denne på jobbes litt mer med, den finner ikke puls nå uten å gjøre mer matematikk
+    X_f = fft(data_kanal)
+    pulse_index = np.argmax(X_f)
+    bpm = data_to_bpm(data_kanal)
+    pulse = bpm[pulse_index]
+    return pulse
+
+
 
 # =================== Regne ut puls med autocorrelasjon ===================
 def autocorrelasjon(data_kanal):
@@ -59,7 +77,7 @@ def autocorrelasjon(data_kanal):
     data_autocorr = data_autocorr / np.max(data_autocorr)
     return data_autocorr
 
-def find_puls_auto(data_kanal): #denne på jobbes litt mer med, den finner ikke puls nå uten å gjøre mer matematikk
+def find_puls_autokorr(data_kanal): #denne på jobbes litt mer med, den finner ikke puls nå uten å gjøre mer matematikk
     rxy = autocorrelasjon(data_kanal)
     peaks_indices = sc.find_peaks(rxy,height = 0.4, threshold=None)
     pulse = 1
@@ -67,17 +85,18 @@ def find_puls_auto(data_kanal): #denne på jobbes litt mer med, den finner ikke 
 
 
 
+# =================== Lage vektor med pulser ===================
 
 def generate_pulse_vec(filnavn_liste, color_index): #data_kanaler[0] gir Rød, 0 = rød, 1 = grønn, 2 = blå
     puls_vec = []
     for filnavn in filnavn_liste: #5 ulike målinger
         data_kanaler = file_to_data(filnavn)
-        puls_vec.append(find_puls_auto(data_kanaler[color_index])) 
+        puls_vec.append(find_puls_fft(data_kanaler[color_index])) 
     return puls_vec
 
 
 
-
+# =================== Regne ut puls med standardavvik og varians av puls ===================
 def standardavvik(puls_vec):
     std = np.std(puls_vec, ddof=1)
     return std
@@ -87,26 +106,32 @@ def varians(pulse_vec):
     var = np.var(pulse_vec)
     return var
 
+# =================== Plotter PSD og regner ut SNR===================
 
-#Plotter PSD og regner ut SNR
+def PSD(data_kanal):
+    X= fft(data_kanal)
+    Effekttetthetsspektrum = (abs(X)**2) #PSD
+    PSD_log = 10*np.log10(Effekttetthetsspektrum)
+    PSD_normalisert = PSD_log - np.max(PSD_log) #normalisering
+    PSD = [Effekttetthetsspektrum, PSD_normalisert]
+    return PSD
 
-""" Effekttetthetsspektrum = (abs(X_f)**2) #PSD
-PSD_log = 10*np.log10(Effekttetthetsspektrum)
-PSD_normalisert = PSD_log - np.max(PSD_log) #normalisering
 
-signal_sum = 0
-noise_sum = 0
- 
+def SNR(data_kanal):
 
-for i in range(len(Effekttetthetsspektrum)):
-    if  frekvenser[np.argmax(Effekttetthetsspektrum)]-10 < frekvenser[i] < frekvenser[np.argmax(Effekttetthetsspektrum)]+10:
-        #print(f"frekvenskomponent: {Effekttetthetsspektrum[i]}")
-        signal_sum += Effekttetthetsspektrum[i]
-    else:
-        noise_sum += Effekttetthetsspektrum[i]
+    signal_sum = 0
+    noise_sum = 0
+    Effekttetthetsspektrum , norm = PSD(data_kanal)
+    bpm = data_to_bpm(data_kanal)
 
-SNR = 10*np.log10(np.abs(signal_sum / noise_sum))
-print(f"SNR for en enkelt kanal {SNR} i dB") """
+    for i in range(len(Effekttetthetsspektrum)):
+        if  np.argmax(Effekttetthetsspektrum)-10 < bpm[i] < np.argmax(Effekttetthetsspektrum)+10:
+            signal_sum += Effekttetthetsspektrum[i]
+        else:
+            noise_sum += Effekttetthetsspektrum[i]
+
+    SNR = 10*np.log10(np.abs(signal_sum / noise_sum))
+    return SNR
 
 
 r,g,b = file_to_data(filename)
@@ -117,6 +142,7 @@ def plot_rådata():
     plt.plot(g, "g")
     plt.plot(b, "b")
     plt.show()
+
 
 #Plot av filtrert data
 def plot_filtrert_data():
@@ -129,21 +155,15 @@ def plot_filtrert_data():
     plt.plot(Blue_filtrert, "b")
     plt.show()
 
+
 #Plot FFT
-def plot_FFT(data_kanal):
-    signallengde_frames = len(data_kanal)
-    frames = np.arange(0, signallengde_frames)
-    signallengde_tid = signallengde_frames/30 #fps
-    frekvens_resolution = 1/signallengde_tid # 1/sek = Hz
-    freqs = frekvens_resolution*frames #datapunkter i frames*Hz
-    bpm = freqs*60 #konverterer fra frekvens til bmp
-    print(f"dette er bpm: {bpm}")
-    
-    
+def plot_FFT(data_kanal):  
+    bpm = data_to_bpm(data_kanal)
     plt.plot(bpm, fft(r), "r")
     plt.plot(bpm, fft(g), "g")
     plt.plot(bpm, fft(b), "b")
     plt.show()
+
 
 
 #Plot Autocorrelasjon
@@ -157,9 +177,19 @@ def plot_autocorr(data_kanal1, data_kanal2, data_kanal3): #her kan man ta inn r�
     plt.plot(Green_autocorr, "g")
     plt.show()
 
-plot_autocorr(digitalt_filter(3,r), digitalt_filter(3, g),digitalt_filter(3, b))
+
+
+
+""" plot_autocorr(digitalt_filter(3,r), digitalt_filter(3, g),digitalt_filter(3, b))
 
 plot_FFT(g)
 
+plt.plot(fft(r), "r")
+plt.plot(fft(g), "g")
+plt.plot(fft(b), "b")
+plt.show()
 
-filnavn_lst = ["maling1", "maling2", "m3",  "m4", "m5"]
+print(find_puls_fft(g))
+ """
+
+print(SNR(g))
