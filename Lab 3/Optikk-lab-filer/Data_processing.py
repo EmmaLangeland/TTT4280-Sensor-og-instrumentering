@@ -85,7 +85,7 @@ def plot_filtrert_data():
 #Plot FFT
 def plot_FFT(data_kanal):
     signallengde_frames = len(data_kanal)
-    frames = np.arange(0, len(data_kanal))
+    frames = np.arange(0, signallengde_frames)
     signallengde_tid = signallengde_frames/30 #fps
     frekvens_resolution = 1/signallengde_tid # 1/sek = Hz
     freqs = frekvens_resolution*frames #datapunkter i frames*Hz
@@ -99,14 +99,18 @@ def plot_FFT(data_kanal):
 
 
 #Plot Autocorrelasjon
-def plot_autocorr(data_kanal): #her kan man ta inn rå eller filtrert data
-    Green_autocorr = autocorrelasjon(data_kanal)
-    Blue_autocorr = autocorrelasjon(data_kanal)
-    Red_autocorr = autocorrelasjon(data_kanal)
+def plot_autocorr(data_kanal1, data_kanal2, data_kanal3): #her kan man ta inn rå eller filtrert data
+    Green_autocorr = autocorrelasjon(data_kanal1)
+    Blue_autocorr = autocorrelasjon(data_kanal2)
+    Red_autocorr = autocorrelasjon(data_kanal3)
 
     plt.plot(Blue_autocorr, "b")
     plt.plot(Red_autocorr, "r")
     plt.plot(Green_autocorr, "g")
     plt.show()
 
-plot_autocorr(digitalt_filter(3, Green))
+plot_autocorr(digitalt_filter(3, Red), digitalt_filter(3, Green),digitalt_filter(3, Blue))
+
+plot_FFT(Green)
+
+
