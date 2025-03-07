@@ -109,3 +109,4 @@ def plot_autocorr(data_kanal): #her kan man ta inn rå eller filtrert data
     plt.plot(Green_autocorr, "g")
     plt.show()
 
+plot_autocorr(digitalt_filter(3, Green))
