@@ -5,8 +5,8 @@ from scipy.fft import rfft, rfftfreq
 
 
 # =================== Variables ===================
-filename = "Pulse_test_2.txt"
-filnavn_lst = ["maling1", "maling2", "m3",  "m4", "m5"]
+filename = "Puls_hvile_4.txt" #Pulse_test_2.txt
+filnavn_lst = ["Puls_hvile_1.txt", "Puls_hvile_2.txt", "Puls_hvile_3.txt",  "Puls_hvile_4.txt", "Puls_hvile_5.txt"]
 fs = 30 #funnet ved å ta lengden på data og dele på tiden spilt inn, også mulig å lese av i terminalen etter kjørt roi.py filen
 
 # =================== Import text file ===================
@@ -33,7 +33,7 @@ def data_to_bpm(data_kanal):
 
 
 # =================== Filtrere data med båndpass Butterworth filter ===================
-""" def digitalt_filter(N, low_freq, high_freq, data_2B_filtered): #N er orden på filteret 
+def digitalt_filter(N, low_freq, high_freq, data_2B_filtered): #N er orden på filteret 
     nyquist = fs / 2
     low = low_freq / nyquist  #Normaliserer frekvensen
     high = high_freq / nyquist  
@@ -41,33 +41,33 @@ def data_to_bpm(data_kanal):
     filtrert_data = sc.lfilter(filter_coefficients[0], filter_coefficients[1], data_2B_filtered)
     return filtrert_data #er et array
 
-Red_filtrert = digitalt_filter(4, 20, , Red)
-Green_filtrert = digitalt_filter(4, 20, 100, Green)
-Blue_filtrert = digitalt_filter(4, 20, 100, Blue)
- """
 
 
 
-def digitalt_filter(high_freq, data_2B_filtered): 
+""" def digitalt_filter(high_freq, data_2B_filtered): 
     N = 4 #N er orden på filteret 
     nyquist = fs / 2  #Normaliserer frekvensen
     high = high_freq / nyquist  
     filter_coefficients = sc.butter(N, high, "low") #python tupple with coeffs
     filtrert_data = sc.lfilter(filter_coefficients[0], filter_coefficients[1], data_2B_filtered)
     return filtrert_data #er et array
-
+ """
 
 # =================== Regne ut puls med FFT ===================
 def fft(data_kanal):
+    #filter data
+    data_kanal = digitalt_filter(4, 0.3, 3, data_kanal)
     Nfft = len(data_kanal)
     data_fft = np.fft.fft(data_kanal, Nfft)
     return np.abs(data_fft)
 
 def find_puls_fft(data_kanal): #denne på jobbes litt mer med, den finner ikke puls nå uten å gjøre mer matematikk
     X_f = fft(data_kanal)
+    X_f = X_f[:len(data_kanal)//2]
     pulse_index = np.argmax(X_f)
     bpm = data_to_bpm(data_kanal)
     pulse = bpm[pulse_index]
+    #print (f"dette er pulsen: {pulse}")
     return pulse
 
 
@@ -106,6 +106,11 @@ def standardavvik(puls_vec):
 def varians(pulse_vec):
     var = np.var(pulse_vec)
     return var
+
+def gjennomsnitt(pulse_vec):
+    summen = np.sum(pulse_vec)
+    snitt = summen/ len(pulse_vec)
+    return snitt
 
 # =================== Plotter PSD og regner ut SNR===================
 
@@ -166,6 +171,7 @@ def plot_filtrert_data():
 #Plot FFT
 def plot_FFT(data_kanal):  
     bpm = data_to_bpm(data_kanal)
+    
     plt.plot(bpm, fft(r), "r")
     plt.plot(bpm, fft(g), "g")
     plt.plot(bpm, fft(b), "b")
@@ -187,3 +193,23 @@ def plot_autocorr(data_kanal1, data_kanal2, data_kanal3): #her kan man ta inn r�
 
 snr = SNR(g)
 print(f"SNR = {snr:.2f} dB")
+
+rød_vec = generate_pulse_vec(filnavn_lst, 0)
+rød_snitt = gjennomsnitt(rød_vec)
+rød_std = standardavvik(rød_vec)
+print(f"for rød kanal: snitt: {rød_snitt}, std: {rød_std}.")
+
+grønn_vec =  generate_pulse_vec(filnavn_lst, 1)
+grønn_snitt = gjennomsnitt(grønn_vec)
+grønn_std = standardavvik(grønn_vec)
+print(f"for grønn kanal: snitt: {grønn_snitt}, std: {grønn_std}.")
+
+blue_vec =  generate_pulse_vec(filnavn_lst, 2)
+blue_snitt = gjennomsnitt(blue_vec)
+blue_std = standardavvik(blue_vec)
+print(f"for blue kanal: snitt: {blue_snitt}, std: {blue_std}.")
+
+rød_snr = SNR(r)
+grønn_snr = SNR(g)
+blue_snr = SNR(b)
+print(f"SNR for de tre kanalene rød, grønn og blå for måling (Puls_hvile_1.txt) er hhv {rød_snr} , {grønn_snr} , {blue_snr} .") 
