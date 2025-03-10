@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy.signal as sc
+from scipy.fft import rfft, rfftfreq
 
 
 # =================== Variables ===================
@@ -108,6 +109,7 @@ def varians(pulse_vec):
 
 # =================== Plotter PSD og regner ut SNR===================
 
+
 def PSD(data_kanal):
     X= fft(data_kanal)
     Effekttetthetsspektrum = (abs(X)**2) #PSD
@@ -123,15 +125,20 @@ def SNR(data_kanal):
     noise_sum = 0
     Effekttetthetsspektrum , norm = PSD(data_kanal)
     bpm = data_to_bpm(data_kanal)
+    
 
     for i in range(len(Effekttetthetsspektrum)):
-        if  np.argmax(Effekttetthetsspektrum)-10 < bpm[i] < np.argmax(Effekttetthetsspektrum)+10:
+        if  np.argmax(Effekttetthetsspektrum)-50 < Effekttetthetsspektrum[i] < np.argmax(Effekttetthetsspektrum)+50:
             signal_sum += Effekttetthetsspektrum[i]
         else:
             noise_sum += Effekttetthetsspektrum[i]
 
+    print(signal_sum)
+    print(noise_sum)
+
     SNR = 10*np.log10(np.abs(signal_sum / noise_sum))
     return SNR
+
 
 
 r,g,b = file_to_data(filename)
@@ -178,18 +185,5 @@ def plot_autocorr(data_kanal1, data_kanal2, data_kanal3): #her kan man ta inn rÃ
     plt.show()
 
 
-
-
-""" plot_autocorr(digitalt_filter(3,r), digitalt_filter(3, g),digitalt_filter(3, b))
-
-plot_FFT(g)
-
-plt.plot(fft(r), "r")
-plt.plot(fft(g), "g")
-plt.plot(fft(b), "b")
-plt.show()
-
-print(find_puls_fft(g))
- """
-
-print(SNR(g))
+snr = SNR(g)
+print(f"SNR = {snr:.2f} dB")
