@@ -5,9 +5,9 @@ from scipy.fft import rfft, rfftfreq
 
 
 # =================== Variables ===================
-filename = "Puls_refl_5.txt" #Pulse_test_2.txt
+#filnavn_lst = ["Pulse_test_2.txt"] #Pulse_test_2.txt
 #filnavn_lst = ["Puls_hvile_1.txt", "Puls_hvile_2.txt", "Puls_hvile_3.txt",  "Puls_hvile_4.txt", "Puls_hvile_5.txt"] #Transmittans
-filnavn_lst = ["Puls_refl_1.txt", "Puls_refl_2.txt", "Puls_refl_3.txt",  "Puls_refl_4.txt", "Puls_refl_5.txt"] #Reflektans
+#filnavn_lst = ["Puls_refl_1.txt", "Puls_refl_2.txt", "Puls_refl_3.txt",  "Puls_refl_4.txt", "Puls_refl_5.txt"] #Reflektans
 fs = 30 #funnet ved å ta lengden på data og dele på tiden spilt inn, også mulig å lese av i terminalen etter kjørt roi.py filen
 
 # =================== Import text file ===================
@@ -16,13 +16,13 @@ def file_to_data(filnavn):
     data = data - np.mean(data,axis=0)
     #Split into channels for Red, Green and Blue
     #Full rådata lengde -----
-    """ Red = data[:,0]
+    Red = data[:,0]
     Green = data[:,1]
-    Blue = data[:,2] """
+    Blue = data[:,2]
     #Kutter rådata lengde for å unngå lave frekvenser -----
-    Red = data[300:450,0]
+    """ Red = data[300:450,0]
     Green = data[300:450,1]
-    Blue = data[300:450,2]
+    Blue = data[300:450,2] """
     #Create a time axis
     #time = np.arange(len(data))
     data_kanaler = [Red, Green, Blue]
@@ -36,7 +36,6 @@ def data_to_bpm(data_kanal):
     frekvens_resolution = 1/signallengde_tid # 1/sek = Hz
     freqs = frekvens_resolution*frames #datapunkter i frames*Hz
     bpm = freqs*60 #konverterer fra frekvens til bmp
-    bpm = bpm[:int(len(bpm)/2)]
     return bpm
 
 
@@ -66,13 +65,12 @@ def fft(data_kanal):
     #data_kanal = digitalt_filter(4, 0.3, 3, data_kanal)
     Nfft = len(data_kanal)
     data_fft = np.fft.fft(data_kanal, Nfft)
-    #data_fft = digitalt_filter(4, 0.3, 3, data_fft)
-    data_fft = data_fft[:int(len(data_fft)/2)]
+    data_fft = digitalt_filter(4, 0.3, 3, data_fft)
     return np.abs(data_fft)
 
 def find_puls_fft(data_kanal): #denne på jobbes litt mer med, den finner ikke puls nå uten å gjøre mer matematikk
     X_f = fft(data_kanal)
-    #X_f = X_f[:len(data_kanal)//2]
+    X_f = X_f[:len(data_kanal)//2]
     pulse_index = np.argmax(X_f)
     bpm = data_to_bpm(data_kanal)
     pulse = bpm[pulse_index]
@@ -121,7 +119,7 @@ def gjennomsnitt(pulse_vec):
     snitt = summen/ len(pulse_vec)
     return snitt
 
-# =================== Regner ut PSD og SNR===================
+# =================== Plotter PSD og regner ut SNR===================
 
 
 def PSD(data_kanal):
@@ -129,38 +127,44 @@ def PSD(data_kanal):
     Effekttetthetsspektrum = (abs(X)**2) #PSD
     PSD_log = 10*np.log10(Effekttetthetsspektrum)
     PSD_normalisert = PSD_log - np.max(PSD_log) #normalisering
-    PSD = [Effekttetthetsspektrum, PSD_normalisert]
-    return PSD
+    return Effekttetthetsspektrum, PSD_normalisert
 
 
 def SNR(data_kanal):
 
     signal_sum = 0
     noise_sum = 0
-    Effekttetthetsspektrum , norm = PSD(data_kanal)
+    Effekttetthetsspektrum, norm = PSD(data_kanal)
     bpm = data_to_bpm(data_kanal)
     
-
+    N_sum = 0
+    N_noise = 0
     for i in range(len(Effekttetthetsspektrum)):
-        if  np.argmax(Effekttetthetsspektrum)-50 < Effekttetthetsspektrum[i] < np.argmax(Effekttetthetsspektrum)+50:
+        if  np.argmax(Effekttetthetsspektrum)-50 < i < np.argmax(Effekttetthetsspektrum)+50:
             signal_sum += Effekttetthetsspektrum[i]
+            N_sum += 1
         else:
             noise_sum += Effekttetthetsspektrum[i]
+            N_noise += 1
 
     print(signal_sum)
     print(noise_sum)
-
-    SNR = 10*np.log10(np.abs(signal_sum / noise_sum))
+    print(Effekttetthetsspektrum[0])
+    print(Effekttetthetsspektrum[1])
+    signal_sum_norm = signal_sum/N_sum
+    noise_sum_norm = noise_sum / N_noise
+    SNR = 10*np.log10(np.abs(signal_sum_norm / noise_sum_norm))
     return SNR
-#bruke gjennomsnitt og peak
 
 
 
-r,g,b = file_to_data(filename)
+
+#r,g,b = file_to_data(filename)
 
 #FUNKSJONER FOR Å PLOTTE DATA ================
 #Plot raw data
-def plot_rådata():
+def plot_rådata(filename):
+    r,g,b = file_to_data(filename)
     plt.plot(r, "r")
     plt.plot(g, "g")
     plt.plot(b, "b")
@@ -169,9 +173,9 @@ def plot_rådata():
 #Plot raw data and takes inn filename
 def plot_rådata_nr2(filename):
     r,g,b = file_to_data(filename)
-    #plt.plot(r, "r")
+    plt.plot(r, "r")
     plt.plot(g, "g")
-    #plt.plot(b, "b")
+    plt.plot(b, "b")
     plt.show()
 
 
@@ -181,9 +185,9 @@ def plot_filtrert_data():
     Green_filtrert = digitalt_filter(3, g)
     Blue_filtrert = digitalt_filter(3, b)
 
-    #plt.plot(Red_filtrert, "r")
+    plt.plot(Red_filtrert, "r")
     plt.plot(Green_filtrert, "g")
-    #plt.plot(Blue_filtrert, "b")
+    plt.plot(Blue_filtrert, "b")
     plt.show()
 
 
@@ -201,9 +205,9 @@ def plot_FFT_nr2(filename):
     r, g, b = file_to_data(filename)  
     bpm = data_to_bpm(r)
     
-    #plt.plot(bpm, fft(r), "r")
+    plt.plot(bpm, fft(r), "r")
     plt.plot(bpm, fft(g), "g")
-    #plt.plot(bpm, fft(b), "b")
+    plt.plot(bpm, fft(b), "b")
     plt.show()
 
 
@@ -222,16 +226,16 @@ def plot_autocorr(data_kanal1, data_kanal2, data_kanal3): #her kan man ta inn r�
 
 # *=*=*=*=*=*=*=*=*=*=*=*=*= Kjører funkjsonene under her *=*=*=*=*=*=*=*=*=*=*=*=*=
 #DEFINER FILNAVNENE VI TESTER HER
-#filnavn_lst = ["Puls_hvile_1.txt", "Puls_hvile_2.txt", "Puls_hvile_3.txt",  "Puls_hvile_4.txt", "Puls_hvile_5.txt"] #Transmittans
+filnavn_lst = ["Puls_hvile_1.txt", "Puls_hvile_2.txt", "Puls_hvile_3.txt",  "Puls_hvile_4.txt", "Puls_hvile_5.txt"] #Transmittans
 #filnavn_lst = ["Puls_refl_1.txt", "Puls_refl_2.txt", "Puls_refl_3.txt",  "Puls_refl_4.txt", "Puls_refl_5.txt"] #Reflektans
-filnavn_lst = ["Puls_varm_1.txt", "Puls_varm_2.txt", "Puls_kald_1.txt",  "Puls_kald_2.txt", "Puls_run_1.txt", "Puls_run_2.txt"] #Robusthetstest
+#filnavn_lst = ["Puls_varm_1.txt", "Puls_varm_2.txt", "Puls_kald_1.txt",  "Puls_kald_2.txt", "Puls_run_1.txt", "Puls_run_2.txt"] #Robusthetstest
 
 #Kjør for å plotte rådata til alle kanalene =======================
 """ for filnavn in filnavn_lst:
-    plot_rådata_nr2(filnavn) """
+    plot_rådata_nr2(filnavn)
 
 #Kjør for å plotte fft til alle kanalene ==========================
-""" for filnavn in filnavn_lst:
+for filnavn in filnavn_lst:
     plot_FFT_nr2(filnavn) """
 
 #Kjør for å regne ut puls til hver av kanalene ====================
@@ -241,41 +245,31 @@ blå_vec =  generate_pulse_vec(filnavn_lst, 2)
 
 print(f"Pulser-Rød: {rød_vec} \n Pulser-Grønn: {grønn_vec} \n Pulser-Blå: {blå_vec} \n")
 
-#Kjør for å plotte freq spekter med kuttet data ===================
-#plot_FFT_nr2("Puls_hvile_1.txt")
-
-# Plott PSD for alle kanalene
-for filnavn in filnavn_lst:
-    r, b, g = file_to_data(filnavn)
-    plt.plot(PSD(r))
-    plt.show()
-    plt.plot(PSD(g))
-    plt.show()
-    plt.plot(PSD(b))
-    plt.show()
-
 #Kjør For å regne ut SNR, snitt og std ============================
-""" snr = SNR(g)
-print(f"SNR = {snr:.2f} dB")
+for filnavn in filnavn_lst:
+    r, g, b = file_to_data(filnavn)
+    snr = SNR(g)
+    print(f"SNR = {snr:.2f} dB")
 
-rød_vec = generate_pulse_vec(filnavn_lst, 0)
-rød_snitt = gjennomsnitt(rød_vec)
-rød_std = standardavvik(rød_vec)
-print(f"for rød kanal: snitt: {rød_snitt}, std: {rød_std}.")
+    rød_vec = generate_pulse_vec(filnavn_lst, 0)
+    rød_snitt = gjennomsnitt(rød_vec)
+    rød_std = standardavvik(rød_vec)
+    print(f"for rød kanal: snitt: {rød_snitt}, std: {rød_std}.")
 
-grønn_vec =  generate_pulse_vec(filnavn_lst, 1)
-grønn_snitt = gjennomsnitt(grønn_vec)
-grønn_std = standardavvik(grønn_vec)
-print(f"for grønn kanal: snitt: {grønn_snitt}, std: {grønn_std}.")
+    grønn_vec =  generate_pulse_vec(filnavn_lst, 1)
+    grønn_snitt = gjennomsnitt(grønn_vec)
+    grønn_std = standardavvik(grønn_vec)
+    print(f"for grønn kanal: snitt: {grønn_snitt}, std: {grønn_std}.")
 
-blue_vec =  generate_pulse_vec(filnavn_lst, 2)
-blue_snitt = gjennomsnitt(blue_vec)
-blue_std = standardavvik(blue_vec)
-print(f"for blue kanal: snitt: {blue_snitt}, std: {blue_std}.")
+    blue_vec =  generate_pulse_vec(filnavn_lst, 2)
+    blue_snitt = gjennomsnitt(blue_vec)
+    blue_std = standardavvik(blue_vec)
+    print(f"for blue kanal: snitt: {blue_snitt}, std: {blue_std}.")
 
-rød_snr = SNR(r)
-grønn_snr = SNR(g)
-blue_snr = SNR(b)
-print(f"SNR for de tre kanalene rød, grønn og blå for måling (Puls_hvile_1.txt) er hhv: \n Rød: {rød_snr} \n Grønn:  {grønn_snr} \n Blå:  {blue_snr} .") 
- """
+    rød_snr = SNR(r)
+    grønn_snr = SNR(g)
+    blue_snr = SNR(b)
 
+    print(f"SNR for de tre kanalene rød, grønn og blå for måling (Puls_hvile_1.txt) er hhv {rød_snr} , {grønn_snr} , {blue_snr} .") 
+
+    
