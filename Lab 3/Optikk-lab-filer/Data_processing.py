@@ -36,6 +36,7 @@ def data_to_bpm(data_kanal):
     frekvens_resolution = 1/signallengde_tid # 1/sek = Hz
     freqs = frekvens_resolution*frames #datapunkter i frames*Hz
     bpm = freqs*60 #konverterer fra frekvens til bmp
+    bpm = bpm[:int(len(bpm)/2)]
     return bpm
 
 
@@ -65,12 +66,13 @@ def fft(data_kanal):
     #data_kanal = digitalt_filter(4, 0.3, 3, data_kanal)
     Nfft = len(data_kanal)
     data_fft = np.fft.fft(data_kanal, Nfft)
-    data_fft = digitalt_filter(4, 0.3, 3, data_fft)
+    #data_fft = digitalt_filter(4, 0.3, 3, data_fft)
+    data_fft = data_fft[:int(len(data_fft)/2)]
     return np.abs(data_fft)
 
 def find_puls_fft(data_kanal): #denne på jobbes litt mer med, den finner ikke puls nå uten å gjøre mer matematikk
     X_f = fft(data_kanal)
-    X_f = X_f[:len(data_kanal)//2]
+    #X_f = X_f[:len(data_kanal)//2]
     pulse_index = np.argmax(X_f)
     bpm = data_to_bpm(data_kanal)
     pulse = bpm[pulse_index]
@@ -119,7 +121,7 @@ def gjennomsnitt(pulse_vec):
     snitt = summen/ len(pulse_vec)
     return snitt
 
-# =================== Plotter PSD og regner ut SNR===================
+# =================== Regner ut PSD og SNR===================
 
 
 def PSD(data_kanal):
@@ -150,6 +152,7 @@ def SNR(data_kanal):
 
     SNR = 10*np.log10(np.abs(signal_sum / noise_sum))
     return SNR
+#bruke gjennomsnitt og peak
 
 
 
@@ -224,12 +227,12 @@ def plot_autocorr(data_kanal1, data_kanal2, data_kanal3): #her kan man ta inn r�
 filnavn_lst = ["Puls_varm_1.txt", "Puls_varm_2.txt", "Puls_kald_1.txt",  "Puls_kald_2.txt", "Puls_run_1.txt", "Puls_run_2.txt"] #Robusthetstest
 
 #Kjør for å plotte rådata til alle kanalene =======================
-for filnavn in filnavn_lst:
-    plot_rådata_nr2(filnavn)
+""" for filnavn in filnavn_lst:
+    plot_rådata_nr2(filnavn) """
 
 #Kjør for å plotte fft til alle kanalene ==========================
-for filnavn in filnavn_lst:
-    plot_FFT_nr2(filnavn)
+""" for filnavn in filnavn_lst:
+    plot_FFT_nr2(filnavn) """
 
 #Kjør for å regne ut puls til hver av kanalene ====================
 rød_vec = generate_pulse_vec(filnavn_lst, 0)
@@ -237,6 +240,19 @@ grønn_vec =  generate_pulse_vec(filnavn_lst, 1)
 blå_vec =  generate_pulse_vec(filnavn_lst, 2)
 
 print(f"Pulser-Rød: {rød_vec} \n Pulser-Grønn: {grønn_vec} \n Pulser-Blå: {blå_vec} \n")
+
+#Kjør for å plotte freq spekter med kuttet data ===================
+#plot_FFT_nr2("Puls_hvile_1.txt")
+
+# Plott PSD for alle kanalene
+for filnavn in filnavn_lst:
+    r, b, g = file_to_data(filnavn)
+    plt.plot(PSD(r))
+    plt.show()
+    plt.plot(PSD(g))
+    plt.show()
+    plt.plot(PSD(b))
+    plt.show()
 
 #Kjør For å regne ut SNR, snitt og std ============================
 """ snr = SNR(g)
@@ -260,6 +276,6 @@ print(f"for blue kanal: snitt: {blue_snitt}, std: {blue_std}.")
 rød_snr = SNR(r)
 grønn_snr = SNR(g)
 blue_snr = SNR(b)
-print(f"SNR for de tre kanalene rød, grønn og blå for måling (Puls_hvile_1.txt) er hhv {rød_snr} , {grønn_snr} , {blue_snr} .") 
+print(f"SNR for de tre kanalene rød, grønn og blå for måling (Puls_hvile_1.txt) er hhv: \n Rød: {rød_snr} \n Grønn:  {grønn_snr} \n Blå:  {blue_snr} .") 
  """
 
