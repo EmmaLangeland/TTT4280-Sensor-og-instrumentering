@@ -5,8 +5,9 @@ from scipy.fft import rfft, rfftfreq
 
 
 # =================== Variables ===================
-filename = "Puls_hvile_4.txt" #Pulse_test_2.txt
-filnavn_lst = ["Puls_hvile_1.txt", "Puls_hvile_2.txt", "Puls_hvile_3.txt",  "Puls_hvile_4.txt", "Puls_hvile_5.txt"]
+filename = "Puls_refl_5.txt" #Pulse_test_2.txt
+#filnavn_lst = ["Puls_hvile_1.txt", "Puls_hvile_2.txt", "Puls_hvile_3.txt",  "Puls_hvile_4.txt", "Puls_hvile_5.txt"] #Transmittans
+filnavn_lst = ["Puls_refl_1.txt", "Puls_refl_2.txt", "Puls_refl_3.txt",  "Puls_refl_4.txt", "Puls_refl_5.txt"] #Reflektans
 fs = 30 #funnet ved å ta lengden på data og dele på tiden spilt inn, også mulig å lese av i terminalen etter kjørt roi.py filen
 
 # =================== Import text file ===================
@@ -14,14 +15,20 @@ def file_to_data(filnavn):
     data = np.loadtxt(filnavn)
     data = data - np.mean(data,axis=0)
     #Split into channels for Red, Green and Blue
-    Red = data[:,0]
+    #Full rådata lengde -----
+    """ Red = data[:,0]
     Green = data[:,1]
-    Blue = data[:,2]
+    Blue = data[:,2] """
+    #Kutter rådata lengde for å unngå lave frekvenser -----
+    Red = data[300:450,0]
+    Green = data[300:450,1]
+    Blue = data[300:450,2]
     #Create a time axis
     #time = np.arange(len(data))
     data_kanaler = [Red, Green, Blue]
     return data_kanaler
 
+# Lager x aksen vi bruker når vi plotter fft
 def data_to_bpm(data_kanal):
     signallengde_frames = len(data_kanal)
     frames = np.arange(0, signallengde_frames)
@@ -42,8 +49,7 @@ def digitalt_filter(N, low_freq, high_freq, data_2B_filtered): #N er orden på f
     return filtrert_data #er et array
 
 
-
-
+# Lavpassfilter
 """ def digitalt_filter(high_freq, data_2B_filtered): 
     N = 4 #N er orden på filteret 
     nyquist = fs / 2  #Normaliserer frekvensen
@@ -56,9 +62,10 @@ def digitalt_filter(N, low_freq, high_freq, data_2B_filtered): #N er orden på f
 # =================== Regne ut puls med FFT ===================
 def fft(data_kanal):
     #filter data
-    data_kanal = digitalt_filter(4, 0.3, 3, data_kanal)
+    #data_kanal = digitalt_filter(4, 0.3, 3, data_kanal)
     Nfft = len(data_kanal)
     data_fft = np.fft.fft(data_kanal, Nfft)
+    data_fft = digitalt_filter(4, 0.3, 3, data_fft)
     return np.abs(data_fft)
 
 def find_puls_fft(data_kanal): #denne på jobbes litt mer med, den finner ikke puls nå uten å gjøre mer matematikk
@@ -148,11 +155,20 @@ def SNR(data_kanal):
 
 r,g,b = file_to_data(filename)
 
+#FUNKSJONER FOR Å PLOTTE DATA ================
 #Plot raw data
 def plot_rådata():
     plt.plot(r, "r")
     plt.plot(g, "g")
     plt.plot(b, "b")
+    plt.show()
+
+#Plot raw data and takes inn filename
+def plot_rådata_nr2(filename):
+    r,g,b = file_to_data(filename)
+    #plt.plot(r, "r")
+    plt.plot(g, "g")
+    #plt.plot(b, "b")
     plt.show()
 
 
@@ -162,9 +178,9 @@ def plot_filtrert_data():
     Green_filtrert = digitalt_filter(3, g)
     Blue_filtrert = digitalt_filter(3, b)
 
-    plt.plot(Red_filtrert, "r")
+    #plt.plot(Red_filtrert, "r")
     plt.plot(Green_filtrert, "g")
-    plt.plot(Blue_filtrert, "b")
+    #plt.plot(Blue_filtrert, "b")
     plt.show()
 
 
@@ -176,6 +192,17 @@ def plot_FFT(data_kanal):
     plt.plot(bpm, fft(g), "g")
     plt.plot(bpm, fft(b), "b")
     plt.show()
+
+# Plot fft with input filename
+def plot_FFT_nr2(filename):
+    r, g, b = file_to_data(filename)  
+    bpm = data_to_bpm(r)
+    
+    #plt.plot(bpm, fft(r), "r")
+    plt.plot(bpm, fft(g), "g")
+    #plt.plot(bpm, fft(b), "b")
+    plt.show()
+
 
 
 
@@ -190,8 +217,29 @@ def plot_autocorr(data_kanal1, data_kanal2, data_kanal3): #her kan man ta inn r�
     plt.plot(Green_autocorr, "g")
     plt.show()
 
+# *=*=*=*=*=*=*=*=*=*=*=*=*= Kjører funkjsonene under her *=*=*=*=*=*=*=*=*=*=*=*=*=
+#DEFINER FILNAVNENE VI TESTER HER
+#filnavn_lst = ["Puls_hvile_1.txt", "Puls_hvile_2.txt", "Puls_hvile_3.txt",  "Puls_hvile_4.txt", "Puls_hvile_5.txt"] #Transmittans
+#filnavn_lst = ["Puls_refl_1.txt", "Puls_refl_2.txt", "Puls_refl_3.txt",  "Puls_refl_4.txt", "Puls_refl_5.txt"] #Reflektans
+filnavn_lst = ["Puls_varm_1.txt", "Puls_varm_2.txt", "Puls_kald_1.txt",  "Puls_kald_2.txt", "Puls_run_1.txt", "Puls_run_2.txt"] #Robusthetstest
 
-snr = SNR(g)
+#Kjør for å plotte rådata til alle kanalene =======================
+for filnavn in filnavn_lst:
+    plot_rådata_nr2(filnavn)
+
+#Kjør for å plotte fft til alle kanalene ==========================
+for filnavn in filnavn_lst:
+    plot_FFT_nr2(filnavn)
+
+#Kjør for å regne ut puls til hver av kanalene ====================
+rød_vec = generate_pulse_vec(filnavn_lst, 0)
+grønn_vec =  generate_pulse_vec(filnavn_lst, 1)
+blå_vec =  generate_pulse_vec(filnavn_lst, 2)
+
+print(f"Pulser-Rød: {rød_vec} \n Pulser-Grønn: {grønn_vec} \n Pulser-Blå: {blå_vec} \n")
+
+#Kjør For å regne ut SNR, snitt og std ============================
+""" snr = SNR(g)
 print(f"SNR = {snr:.2f} dB")
 
 rød_vec = generate_pulse_vec(filnavn_lst, 0)
@@ -213,3 +261,5 @@ rød_snr = SNR(r)
 grønn_snr = SNR(g)
 blue_snr = SNR(b)
 print(f"SNR for de tre kanalene rød, grønn og blå for måling (Puls_hvile_1.txt) er hhv {rød_snr} , {grønn_snr} , {blue_snr} .") 
+ """
+
