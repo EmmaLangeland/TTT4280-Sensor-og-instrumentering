@@ -25,73 +25,91 @@ print("C_1: ", C_1)
 print("C_2: ", C_2)
 
 
+# ---- Lese CSV ----
+header = []
+data = []
+filename = 'bpfilter1.csv'  # Bruk faktiske filnavn her
 
-# Les inn kolonner (tilpass navnene hvis nødvendig)
-frekvens = data['Frekvens (Hz)']         # eller f.eks 'Frequency'
-amplitude = data['Amplitude (V)']        # eller 'Amplitude (dB)', alt etter hva du har
+with open(filename) as csvfile:
+    csvreader = csv.reader(csvfile)
+    header = next(csvreader)
+    for datapoint in csvreader:
+        values = [float(value) for value in datapoint]
+        data.append(values)
 
-# Hvis amplituden er i volt og du ønsker dB:
-amplitude_db = 20 * np.log10(amplitude)
+# ---- Legg inn data i separate lister ----
+frekvens = [p[0] for p in data]      # Frekvens [Hz]
+amplitude = [p[1] for p in data]     # Demping [dB] (kanal 2 i vårt tilfelle)
 
-# Plot amplitude Bode-plot
+# ---- Plot ----
 plt.figure(figsize=(10,6))
-plt.semilogx(frekvens, amplitude_db, label="Amplitude (dB)")
-plt.axvline(3.5, color='red', linestyle='--', label='fL = 3.5 Hz')
-plt.axvline(2800, color='green', linestyle='--', label='fH = 2.8 kHz')
+plt.xscale("log")
+plt.ylabel("Demping [dB]")
 plt.xlabel("Frekvens [Hz]")
-plt.ylabel("Amplitude [dB]")
-plt.title("Bode-plot av båndpassfilter")
+plt.title("Bode-plot av båndpassfilter 1")
+
+# Selve måledataen
+plt.plot(frekvens, amplitude, label='|H(f)|', color='orange')
+
+# Horisontal linje ved -3 dB
+plt.axhline(y=17, linestyle='--', color='black', label='-3 dB fra 20dB forsterkning')
+
+# Vertikale knekkfrekvenser (lav og høy)
+plt.axvline(x=3.5, linestyle='--', color='blue', label='fL = 3.5 Hz')
+plt.axvline(x=2800, linestyle='--', color='green', label='fH = 2.8 kHz')
+
+# Marker evt. -3 dB punktene manuelt hvis kjent:
+# plt.plot(11.5, -3, 'ro', label='Knekkpunkt 1')
+# plt.plot(2600, -3, 'ro', label='Knekkpunkt 2')
+
+plt.xlim([1, 5000])
+plt.ylim([-5, 25])
 plt.grid(True, which='both', linestyle='--', alpha=0.5)
 plt.legend()
 plt.tight_layout()
 plt.show()
 
 
-
+# ---- Lese CSV ----
 header = []
 data = []
-filename = 'network .csv'
+filename = 'bpfilter2.csv'  # Bruk faktiske filnavn her
 
-#Henter data fra csvfil
 with open(filename) as csvfile:
     csvreader = csv.reader(csvfile)
-    #Leser første linje i csv-fila (den med navn til kanalene)
     header = next(csvreader)
     for datapoint in csvreader:
         values = [float(value) for value in datapoint]
         data.append(values)
 
+# ---- Legg inn data i separate lister ----
+frekvens = [p[0] for p in data]      # Frekvens [Hz]
+amplitude = [p[1] for p in data]     # Demping [dB] (kanal 2 i i vårt tilfelle)
 
-#Legger inn data fra hver kanal i hver sin liste
-time = [(p[0]) for p in data]
-ch1 = [(p[1]) for p in data]
-ch2 = [(p[2]) for p in data]
-
-
+# ---- Plot ----
+plt.figure(figsize=(10,6))
 plt.xscale("log")
 plt.ylabel("Demping [dB]")
 plt.xlabel("Frekvens [Hz]")
-plt.title("Network Analyse")
-#plt.plot(time, ch1, label = '')
+plt.title("Bode-plot av båndpassfilter 2")
 
-plt.axhline(y=-1.99, linestyle='--', color='black', label='-2dB')
-plt.plot(time, ch2, label = '|H($f$)|', color= 'orange')
+# Selve måledataen
+plt.plot(frekvens, amplitude, label='|H(f)|', color='orange')
 
+# Horisontal linje ved -3 dB
+plt.axhline(y=17, linestyle='--', color='black', label='-3 dB fra 20dB forsterkning')
 
-plt.xlim([1, 200000])
-plt.ylim([-50, 10])
+# Vertikale knekkfrekvenser (lav og høy)
+plt.axvline(x=3.5, linestyle='--', color='blue', label='fL = 3.5 Hz')
+plt.axvline(x=2800, linestyle='--', color='green', label='fH = 2.8 kHz')
 
-plt.plot(11.47, -5, 'gx', label= '(11.47Hz , -5dB)') # Intersection point
+# Marker evt. -3 dB punktene manuelt hvis kjent:
+# plt.plot(11.5, -3, 'ro', label='Knekkpunkt 1')
+# plt.plot(2600, -3, 'ro', label='Knekkpunkt 2')
 
-
-
-""" plt.axvline(456,linestyle='--', color='red')
-plt.axvline(3655,linestyle='--', color='red')
- """
-
-""" 
-plt.plot(3655, -3, 'go', label= '(3655Hz , -3dB)') # Intersection point """
-
-plt.grid()
+plt.xlim([1, 5000])
+plt.ylim([-5, 25])
+plt.grid(True, which='both', linestyle='--', alpha=0.5)
 plt.legend()
+plt.tight_layout()
 plt.show()
