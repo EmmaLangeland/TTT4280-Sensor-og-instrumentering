@@ -180,9 +180,10 @@ def FlereFiler(filnavn_lst):
 
 
 #================ Kjør Programmet =================
-
+#Kjør funksjonen for kun 1 fil
 MAIN("fram_speed_1.bin")
 
+#Kjør funksjonen for flere filer
 """ fram_fort = ["fram_fort_1.bin", "fram_fort_2.bin", "fram_fort_3.bin", "fram_fort_4.bin" ,"fram_fort_5.bin"] #Legg til filnavn
 FlereFiler(fram_fort)
 fram_speed = ["fram_speed_1.bin", "fram_speed_2.bin", "fram_speed_3.bin", "fram_speed_4.bin" ,"fram_speed_5.bin"] #Legg til filnavn
