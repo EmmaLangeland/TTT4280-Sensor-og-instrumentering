@@ -107,19 +107,25 @@ def SNR(data, filnavn):
 def radiell_hastighet(fft_dopler, freqs):
     index = np.argmax(fft_dopler)
     f_d = freqs[index]
-    print(f_d)
+    #print(f_d)
     #f_d = np.abs(f_d)
     f0 = 24*10**9 #Hz
     c = 3*10**8
     v_r = c*f_d/(2*f0)
     return v_r
 
+def varians(hastigheter):
+    return np.var(hastigheter)
+
+def standardavvik(hastigheter):
+    return np.std(hastigheter)
+
 
 #======================= Plot Data =======================
 
 def Plot_raw(data):
     plt.plot(data[:,0], label='ADC0')
-    plt.show()
+    #plt.show()
     plt.plot(data[:,4], label='ADC4')
     plt.show()
 
@@ -139,7 +145,7 @@ def MAIN(filnavn):
     FFT_dopler, freqs = Regn_ut_FFT(data, filnavn)
 
     #Plot DATA ------------------
-    #Plot_raw(data)
+    Plot_raw(data)
     Plot_FFT(FFT_dopler, freqs)
     plt.show()
 
@@ -148,8 +154,8 @@ def MAIN(filnavn):
     Plot_FFT(FFT_dopler_db, freqs)
     plt.show()
 
-    #SNR(FFT_dopler, filnavn)
-    #print("SNR: ", SNR(FFT_dopler, filnavn))
+    SNR(FFT_dopler, filnavn)
+    print("SNR: ", SNR(FFT_dopler, filnavn))
 
     padded_fft = padding(FFT_dopler_db, 2**16)
     plt.plot(padded_fft)
@@ -158,6 +164,28 @@ def MAIN(filnavn):
     v = radiell_hastighet(FFT_dopler, freqs)
     print(v)
 
+
+
+def FlereFiler(filnavn_lst):
+    hastigheter = []
+    for filnavn in filnavn_lst:
+        data = Hente_data(filnavn)
+        FFT_dopler, freqs = Regn_ut_FFT(data, filnavn)
+        v = radiell_hastighet(FFT_dopler, freqs)
+        hastigheter.append(v)
+    print("hastigheter:", hastigheter)
+    print("variansen av hastigheter:", varians(hastigheter))
+    print("std av hastigheter:", standardavvik(hastigheter))
+
+
+
 #================ Kjør Programmet =================
 
-MAIN("bak_1.bin")
+MAIN("fram_speed_1.bin")
+
+""" fram_fort = ["fram_fort_1.bin", "fram_fort_2.bin", "fram_fort_3.bin", "fram_fort_4.bin" ,"fram_fort_5.bin"] #Legg til filnavn
+FlereFiler(fram_fort)
+fram_speed = ["fram_speed_1.bin", "fram_speed_2.bin", "fram_speed_3.bin", "fram_speed_4.bin" ,"fram_speed_5.bin"] #Legg til filnavn
+FlereFiler(fram_speed)
+bak = ["bak_1.bin", "bak_2.bin", "bak_3.bin", "bak_4.bin" ,"bak_5.bin"] #Legg til filnavn   
+FlereFiler(bak) """
