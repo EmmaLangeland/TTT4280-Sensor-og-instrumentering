@@ -21,30 +21,37 @@ def Hente_data(filnavn):
     return data, time_ax, sample_period
 
 
-# CSV
-""" def Hente_data_CSV(filnavn):
-    header = []
-    data = []
-    with open(filnavn) as csvfile:
-        csvreader = csv.reader(csvfile)
-        header = next(csvreader)
-        for datapoint in csvreader:
-            values = [float(value) for value in datapoint]
-            data.append(values)
-    return data, header """
-
-
-
 #============== Regn ut FFT-en til signalene ==============
 #Kombiner signalene for å få dopler shift
 #Send ut frekvensspekteret med doplershift
-
+#FFT uten pad
 def Regn_ut_FFT(data, filnavn):
-    data, time_ax, sample_period = Hente_data(filnavn)
+    data_1, time_ax, sample_period = Hente_data(filnavn)
 
     fs = 1/sample_period
     IF_I = data[:,0] #ADC0
     IF_Q = data[:,4] #ADC4
+
+    #Kombiner I og Q kanalene
+    IQ = IF_I + 1j*IF_Q
+    
+    Nfft = len(IQ)
+    FFT_dopler = np.fft.fft(IQ, Nfft)
+    FFT_dopler = np.abs(FFT_dopler)
+    Dopler_shift = np.fft.fftshift(FFT_dopler) #1kHz sample rate
+
+    freqs = np.fft.fftfreq(Nfft, 1/fs)
+    freqs = np.fft.fftshift(freqs)
+    #FFT_dopler = FFT_dopler[:len(data)//2] #Kun halve spekteret
+    return Dopler_shift, freqs
+#FFT med pad
+def Regn_ut_FFT_pad(data, filnavn):
+    data_1, time_ax, sample_period = Hente_data(filnavn)
+
+    fs = 1/sample_period
+    IF_I = data[0] #ADC0
+    IF_Q = data[4] #ADC4
+
     #Kombiner I og Q kanalene
     IQ = IF_I + 1j*IF_Q
     
@@ -65,9 +72,17 @@ def FFT_DB(data_FFT):
     data_fft_db_norm = data_fft_db - np.max(data_fft_db)
     return data_fft_db, data_fft_db_norm
 
-def padding(data, pad):
-    padded_data = np.pad(data, (0, pad))
-    return padded_data
+def Hanning(data, pad):
+    IF_I = data[:,0] #ADC0
+    IF_Q = data[:,4] #ADC4
+    window_I = np.hanning(len(IF_I))  # Lager et Hanning-vindu med samme lengde som den data #erstatt med np.ones for å kun padde
+    window_Q = np.hanning(len(IF_Q))
+    hanning_window_I = IF_I * window_I
+    hanning_window_Q = IF_Q * window_Q
+    hanning_window_padded_I = np.pad(hanning_window_I, (0,pad)) #zero padder bak
+    hanning_window_padded_Q = np.pad(hanning_window_Q, (0,pad))
+    hanning_window_padded = [hanning_window_padded_I,1,1,1, hanning_window_padded_Q] #Extra 1s to have the code work in FFTplot.
+    return hanning_window_padded
 
 
 def PSD(data, filnavn):
@@ -139,30 +154,46 @@ def Plot_FFT(data, freqs):
 def MAIN(filnavn):
     #Hente ut data:
     data, time_ax, s = Hente_data(filnavn)
-    #data = Hente_data_CSV(filnavn)
+
+    #Plot raw data
+    Plot_raw(data)
+    plt.show()
+
+    #pad data og legg til hanningvindu
+    padded_data = Hanning(data, 2**17)
 
     #Regne ut FFT:
+    #Uten padding
     FFT_dopler, freqs = Regn_ut_FFT(data, filnavn)
+    #Med padding
+    FFT_dopler_pad, freqs_pad = Regn_ut_FFT_pad(padded_data, filnavn)
 
-    #Plot DATA ------------------
-    Plot_raw(data)
+    #Plot FFT
+    #Uten padding
     Plot_FFT(FFT_dopler, freqs)
+    plt.show()
+    #Med padding
+    Plot_FFT(FFT_dopler_pad, freqs_pad)
     plt.show()
 
     #FFT til db
+    #Uten padding
     FFT_dopler_db, FFT_dopler_db_norm = FFT_DB(FFT_dopler)
     Plot_FFT(FFT_dopler_db, freqs)
+    #Med padding
+    FFT_dopler_db_pad, FFT_dopler_db_norm_pad = FFT_DB(FFT_dopler_pad)
+    Plot_FFT(FFT_dopler_db_pad, freqs_pad)
+    plt.ylim(-20, 31)
     plt.show()
 
-    SNR(FFT_dopler, filnavn)
-    print("SNR: ", SNR(FFT_dopler, filnavn))
-
-    padded_fft = padding(FFT_dopler_db, 2**16)
-    plt.plot(padded_fft)
-    plt.show()
+    #Regne ut SNR
+    SNR_uten_pad = SNR(FFT_dopler, filnavn)
+    SNR_pad = SNR(FFT_dopler, filnavn)
+    print(f"SNR uten padding: {SNR_uten_pad} \n SNR med padding: {SNR_pad}")
 
     v = radiell_hastighet(FFT_dopler, freqs)
-    print(v)
+    v_pad = radiell_hastighet(FFT_dopler_pad, freqs)
+    print(f"Hastighet uten padding: {v} \n Hastighet med padding: {v_pad}")
 
 
 
