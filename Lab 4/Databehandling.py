@@ -146,6 +146,7 @@ def Plot_raw(data):
 
 def Plot_FFT(data, freqs):
     plt.plot(freqs, data)
+    
 
 #********************************************************
 #======================== MAIN ==========================
@@ -174,6 +175,7 @@ def MAIN(filnavn):
     plt.show()
     #Med padding
     Plot_FFT(FFT_dopler_pad, freqs_pad)
+    plt.title("FFT med padding")
     plt.show()
 
     #FFT til db
@@ -183,7 +185,8 @@ def MAIN(filnavn):
     #Med padding
     FFT_dopler_db_pad, FFT_dopler_db_norm_pad = FFT_DB(FFT_dopler_pad)
     Plot_FFT(FFT_dopler_db_pad, freqs_pad)
-    plt.ylim(-20, 31)
+    plt.title("FFT med padding log")
+    plt.ylim(-10, 31)
     plt.show()
 
     #Regne ut SNR
