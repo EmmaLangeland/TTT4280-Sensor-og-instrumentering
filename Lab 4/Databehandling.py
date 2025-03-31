@@ -44,6 +44,7 @@ def Regn_ut_FFT(data, filnavn):
     freqs = np.fft.fftshift(freqs)
     #FFT_dopler = FFT_dopler[:len(data)//2] #Kun halve spekteret
     return Dopler_shift, freqs
+
 #FFT med pad
 def Regn_ut_FFT_pad(data, filnavn):
     data_1, time_ax, sample_period = Hente_data(filnavn)
@@ -85,26 +86,31 @@ def Hanning(data, pad):
     return hanning_window_padded
 
 
-def PSD(data, filnavn):
-    X, freqs= Regn_ut_FFT(data, filnavn)
-    Effekttetthetsspektrum = (abs(X)**2) #PSD
+def PSD(fft_av_signal, filnavn):
+    #X, freqs= Regn_ut_FFT(data, filnavn)
+    Effekttetthetsspektrum = (abs(fft_av_signal)**2) #PSD
     PSD_log = 10*np.log10(Effekttetthetsspektrum)
     PSD_normalisert = PSD_log - np.max(PSD_log) #normalisering
     return Effekttetthetsspektrum, PSD_normalisert
 
 
-def SNR(data, filnavn):
+def SNR(Effekttetthetsspektrum, filnavn):
 
     signal_sum = 0
     noise_sum = 0
-    Effekttetthetsspektrum, norm = PSD(data, filnavn)
 
     N_sum = 0
     N_noise = 0
-    for i in range(len(Effekttetthetsspektrum)):
-        if  np.argmax(Effekttetthetsspektrum)-50 < i < np.argmax(Effekttetthetsspektrum)+50:
+    """ for i in range(len(Effekttetthetsspektrum)):
+        if  np.argmax(Effekttetthetsspektrum)-100 < i < np.argmax(Effekttetthetsspektrum)+100:
             signal_sum += Effekttetthetsspektrum[i]
             N_sum += 1
+        else:
+            noise_sum += Effekttetthetsspektrum[i]
+            N_noise += 1 """
+    for i in range(len(Effekttetthetsspektrum)):
+        if i == np.argmax(Effekttetthetsspektrum):
+            signal_sum = Effekttetthetsspektrum[i]
         else:
             noise_sum += Effekttetthetsspektrum[i]
             N_noise += 1
@@ -115,7 +121,7 @@ def SNR(data, filnavn):
     print(Effekttetthetsspektrum[1])
     signal_sum_norm = signal_sum/N_sum
     noise_sum_norm = noise_sum / N_noise
-    SNR = 10*np.log10(np.abs(signal_sum_norm / noise_sum_norm))
+    SNR = 10*np.log10(np.abs(signal_sum / noise_sum_norm)) #signal_sum_norm / noise_sum_norm
 
     return SNR
 
@@ -186,13 +192,21 @@ def MAIN(filnavn):
     plt.ylim(-20, 31)
     plt.show()
 
+    #Regne ut PSD
+    Effekttetthetsspektrum, norm = PSD(FFT_dopler, filnavn)
+    Effekttetthetsspektrum_pad, norm = PSD(FFT_dopler_pad, filnavn)
+
+    plt.plot(Effekttetthetsspektrum)
+    plt.plot(Effekttetthetsspektrum_pad)
+    plt.show()
+
     #Regne ut SNR
-    SNR_uten_pad = SNR(FFT_dopler, filnavn)
-    SNR_pad = SNR(FFT_dopler, filnavn)
+    SNR_uten_pad = SNR(Effekttetthetsspektrum, filnavn)
+    SNR_pad = SNR(Effekttetthetsspektrum_pad, filnavn)
     print(f"SNR uten padding: {SNR_uten_pad} \n SNR med padding: {SNR_pad}")
 
     v = radiell_hastighet(FFT_dopler, freqs)
-    v_pad = radiell_hastighet(FFT_dopler_pad, freqs)
+    v_pad = radiell_hastighet(FFT_dopler_pad, freqs_pad)
     print(f"Hastighet uten padding: {v} \n Hastighet med padding: {v_pad}")
 
 
