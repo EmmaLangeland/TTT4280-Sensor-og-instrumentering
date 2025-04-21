@@ -91,7 +91,7 @@ def PSD(fft_av_signal, filnavn):
     Effekttetthetsspektrum = (abs(fft_av_signal)**2) #PSD
     PSD_log = 10*np.log10(Effekttetthetsspektrum)
     PSD_normalisert = PSD_log - np.max(PSD_log) #normalisering
-    return Effekttetthetsspektrum, PSD_normalisert
+    return PSD_log, PSD_normalisert
 
 
 def SNR(Effekttetthetsspektrum, filnavn):
@@ -102,7 +102,7 @@ def SNR(Effekttetthetsspektrum, filnavn):
     N_sum = 0
     N_noise = 0
     """ for i in range(len(Effekttetthetsspektrum)):
-        if  np.argmax(Effekttetthetsspektrum)-100 < i < np.argmax(Effekttetthetsspektrum)+100:
+        if  np.argmax(Effekttetthetsspektrum)-3 < i < np.argmax(Effekttetthetsspektrum)+3:
             signal_sum += Effekttetthetsspektrum[i]
             N_sum += 1
         else:
@@ -197,7 +197,7 @@ def MAIN(filnavn):
     Effekttetthetsspektrum_pad, norm = PSD(FFT_dopler_pad, filnavn)
 
     plt.plot(Effekttetthetsspektrum)
-    plt.plot(Effekttetthetsspektrum_pad)
+    #plt.plot(Effekttetthetsspektrum_pad)
     plt.show()
 
     #Regne ut SNR
