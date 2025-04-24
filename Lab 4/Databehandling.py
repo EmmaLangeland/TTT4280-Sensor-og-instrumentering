@@ -44,6 +44,7 @@ def Regn_ut_FFT(data, filnavn):
     freqs = np.fft.fftshift(freqs)
     #FFT_dopler = FFT_dopler[:len(data)//2] #Kun halve spekteret
     return Dopler_shift, freqs
+
 #FFT med pad
 def Regn_ut_FFT_pad(data, filnavn):
     data_1, time_ax, sample_period = Hente_data(filnavn)
@@ -85,26 +86,31 @@ def Hanning(data, pad):
     return hanning_window_padded
 
 
-def PSD(data, filnavn):
-    X, freqs= Regn_ut_FFT(data, filnavn)
-    Effekttetthetsspektrum = (abs(X)**2) #PSD
+def PSD(fft_av_signal, filnavn):
+    #X, freqs= Regn_ut_FFT(data, filnavn)
+    Effekttetthetsspektrum = (abs(fft_av_signal)**2) #PSD
     PSD_log = 10*np.log10(Effekttetthetsspektrum)
     PSD_normalisert = PSD_log - np.max(PSD_log) #normalisering
-    return Effekttetthetsspektrum, PSD_normalisert
+    return PSD_log, PSD_normalisert
 
 
-def SNR(data, filnavn):
+def SNR(Effekttetthetsspektrum, filnavn):
 
     signal_sum = 0
     noise_sum = 0
-    Effekttetthetsspektrum, norm = PSD(data, filnavn)
 
     N_sum = 0
     N_noise = 0
-    for i in range(len(Effekttetthetsspektrum)):
-        if  np.argmax(Effekttetthetsspektrum)-50 < i < np.argmax(Effekttetthetsspektrum)+50:
+    """ for i in range(len(Effekttetthetsspektrum)):
+        if  np.argmax(Effekttetthetsspektrum)-3 < i < np.argmax(Effekttetthetsspektrum)+3:
             signal_sum += Effekttetthetsspektrum[i]
             N_sum += 1
+        else:
+            noise_sum += Effekttetthetsspektrum[i]
+            N_noise += 1 """
+    for i in range(len(Effekttetthetsspektrum)):
+        if i == np.argmax(Effekttetthetsspektrum):
+            signal_sum = Effekttetthetsspektrum[i]
         else:
             noise_sum += Effekttetthetsspektrum[i]
             N_noise += 1
@@ -115,7 +121,7 @@ def SNR(data, filnavn):
     print(Effekttetthetsspektrum[1])
     signal_sum_norm = signal_sum/N_sum
     noise_sum_norm = noise_sum / N_noise
-    SNR = 10*np.log10(np.abs(signal_sum_norm / noise_sum_norm))
+    SNR = 10*np.log10(np.abs(signal_sum / noise_sum_norm)) #signal_sum_norm / noise_sum_norm
 
     return SNR
 
@@ -136,70 +142,6 @@ def standardavvik(hastigheter):
     return np.std(hastigheter)
 
 
-#======================= Plot Data =======================
-
-def Plot_raw(data):
-    plt.plot(data[:,0], label='ADC0')
-    #plt.show()
-    plt.plot(data[:,4], label='ADC4')
-    plt.show()
-
-def Plot_FFT(data, freqs):
-    plt.plot(freqs, data)
-    
-
-#********************************************************
-#======================== MAIN ==========================
-#********************************************************
-
-def MAIN(filnavn):
-    #Hente ut data:
-    data, time_ax, s = Hente_data(filnavn)
-
-    #Plot raw data
-    Plot_raw(data)
-    plt.show()
-
-    #pad data og legg til hanningvindu
-    padded_data = Hanning(data, 2**17)
-
-    #Regne ut FFT:
-    #Uten padding
-    FFT_dopler, freqs = Regn_ut_FFT(data, filnavn)
-    #Med padding
-    FFT_dopler_pad, freqs_pad = Regn_ut_FFT_pad(padded_data, filnavn)
-
-    #Plot FFT
-    #Uten padding
-    Plot_FFT(FFT_dopler, freqs)
-    plt.show()
-    #Med padding
-    Plot_FFT(FFT_dopler_pad, freqs_pad)
-    plt.title("FFT med padding")
-    plt.show()
-
-    #FFT til db
-    #Uten padding
-    FFT_dopler_db, FFT_dopler_db_norm = FFT_DB(FFT_dopler)
-    Plot_FFT(FFT_dopler_db, freqs)
-    #Med padding
-    FFT_dopler_db_pad, FFT_dopler_db_norm_pad = FFT_DB(FFT_dopler_pad)
-    Plot_FFT(FFT_dopler_db_pad, freqs_pad)
-    plt.title("FFT med padding log")
-    plt.ylim(-10, 31)
-    plt.show()
-
-    #Regne ut SNR
-    SNR_uten_pad = SNR(FFT_dopler, filnavn)
-    SNR_pad = SNR(FFT_dopler, filnavn)
-    print(f"SNR uten padding: {SNR_uten_pad} \n SNR med padding: {SNR_pad}")
-
-    v = radiell_hastighet(FFT_dopler, freqs)
-    v_pad = radiell_hastighet(FFT_dopler_pad, freqs)
-    print(f"Hastighet uten padding: {v} \n Hastighet med padding: {v_pad}")
-
-
-
 def FlereFiler(filnavn_lst):
     hastigheter = []
     for filnavn in filnavn_lst:
@@ -211,11 +153,111 @@ def FlereFiler(filnavn_lst):
     print("variansen av hastigheter:", varians(hastigheter))
     print("std av hastigheter:", standardavvik(hastigheter))
 
+#======================= Plot Data =======================
+
+def Plot_raw(data):
+
+    plt.plot(data[:,0], label='ADC0 (I)', linestyle='-', color='tab:blue')
+    plt.plot(data[:,4], label='ADC4 (Q)', linestyle='-', color='tab:orange')
+    
+    plt.xlabel("Tid [samples]")
+    plt.ylabel("Amplitude [V]")
+    plt.title("Rådata fra ADC0 og ADC4")
+    plt.grid(True, which='both', linestyle=':', linewidth=0.7)
+    plt.legend()
+    plt.show()
+
+def Plot_FFT(data, freqs):
+    plt.plot(freqs, data)
+
+def Plot_FFT_dB(data, freqs, xlabel='Frekvens [Hz]', ylabel='Amplitude [dB]', title=''):
+    plt.plot(freqs, data)
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+    plt.title(title)
+    
+
+#********************************************************
+#======================== MAIN ==========================
+#********************************************************
+
+def MAIN(filnavn):
+    #Hente ut data:
+    data, time_ax, s = Hente_data(filnavn)
+
+    """ #Plot raw data
+    Plot_raw(data) """
+
+    #pad data og legg til hanningvindu
+    padded_data = Hanning(data, (2**16-len(data))) #Legg til padding
+
+    #Regne ut FFT:
+    #Uten padding og hanning
+    FFT_dopler, freqs = Regn_ut_FFT(data, filnavn)
+    #Med padding og hanning
+    FFT_dopler_pad, freqs_pad = Regn_ut_FFT_pad(padded_data, filnavn)
+
+    #Plot FFT
+    #Uten padding
+    #Plot_FFT(FFT_dopler, freqs)
+
+    #Med padding
+    #Plot_FFT(FFT_dopler_pad, freqs_pad)
+    #plt.title("FFT med padding")
+
+
+    #FFT til db
+    #Uten padding
+    FFT_dopler_db, FFT_dopler_db_norm = FFT_DB(FFT_dopler)
+    Plot_FFT_dB(FFT_dopler_db, freqs,
+                xlabel='Frekvens [Hz]', 
+                ylabel='Amplitude [dB]',
+                title='Frekvensspekter i log skala')
+    plt.ylim(-10, 31)
+    plt.show()
+
+    #Med padding
+    FFT_dopler_db_pad, FFT_dopler_db_norm_pad = FFT_DB(FFT_dopler_pad)
+    Plot_FFT_dB(FFT_dopler_db_pad, freqs_pad,
+                xlabel='Frekvens [Hz]',
+                ylabel='Amplitude [dB]',
+                title='Frekvensspekter med padding og hanningvindu i log skala')
+    plt.ylim(-10, 31)
+    plt.show()
+
+    #Regne ut PSD
+    Effekttetthetsspektrum, norm = PSD(FFT_dopler, filnavn)
+    Effekttetthetsspektrum_pad, norm_pad = PSD(FFT_dopler_pad, filnavn)
+
+    plt.plot(norm)
+    plt.xlabel('Frekvens [Hz]')
+    plt.ylabel('Relativ amplitude [dB]')
+    plt.title('Effekttetthetsspektrum')
+    plt.ylim(-80, 10)
+    plt.show()
+
+    plt.plot(norm_pad)
+    plt.xlabel('Frekvens [Hz]')
+    plt.ylabel('Relativ amplitude [dB]')
+    plt.title('Effekttetthetsspektrum med padding og hanningvindu')
+    plt.ylim(-80, 10)
+    plt.show()
+
+"""     #Regne ut SNR
+    SNR_uten_pad = SNR(Effekttetthetsspektrum, filnavn)
+    SNR_pad = SNR(Effekttetthetsspektrum_pad, filnavn)
+    print(f"SNR uten padding: {SNR_uten_pad} \n SNR med padding: {SNR_pad}")
+
+    v = radiell_hastighet(FFT_dopler, freqs)
+    v_pad = radiell_hastighet(FFT_dopler_pad, freqs_pad)
+    print(f"Hastighet uten padding: {v} \n Hastighet med padding: {v_pad}") """
+
+
 
 
 #================ Kjør Programmet =================
 #Kjør funksjonen for kun 1 fil
-MAIN("fram_speed_1.bin")
+MAIN("fram_fort_1.bin")
 
 #Kjør funksjonen for flere filer
 """ fram_fort = ["fram_fort_1.bin", "fram_fort_2.bin", "fram_fort_3.bin", "fram_fort_4.bin" ,"fram_fort_5.bin"] #Legg til filnavn
