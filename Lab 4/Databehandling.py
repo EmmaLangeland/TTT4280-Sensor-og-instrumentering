@@ -41,7 +41,7 @@ def Regn_ut_FFT(data, filnavn):
     Dopler_shift = np.fft.fftshift(FFT_dopler) #1kHz sample rate
 
     freqs = np.fft.fftfreq(Nfft, 1/fs)
-    freqs = (freqs)
+    freqs =  np.fft.fftshift(freqs)
     #FFT_dopler = FFT_dopler[:len(data)//2] #Kun halve spekteret
     return Dopler_shift, freqs
 
@@ -139,11 +139,14 @@ def standardavvik(hastigheter):
 def FlereFiler(filnavn_lst):
     hastigheter = []
     for filnavn in filnavn_lst:
-        data = Hente_data(filnavn)
+        data, s, d = Hente_data(filnavn)
         FFT_dopler, freqs = Regn_ut_FFT(data, filnavn)
         v = radiell_hastighet(FFT_dopler, freqs)
         hastigheter.append(v)
+    
+    gjennomsnittlig_hastighet = np.sum(hastigheter)/5
     print("hastigheter:", hastigheter)
+    print("Gjennomsnittlig hastighet: ", gjennomsnittlig_hastighet)
     print("variansen av hastigheter:", varians(hastigheter))
     print("std av hastigheter:", standardavvik(hastigheter))
 
@@ -278,12 +281,18 @@ def MAIN(filnavn):
 
 #================ Kjør Programmet =================
 #Kjør funksjonen for kun 1 fil
-MAIN("fram_fort_1.bin")
+""" MAIN("fram_fort_1.bin") """
 
 #Kjør funksjonen for flere filer
-""" fram_fort = ["fram_fort_1.bin", "fram_fort_2.bin", "fram_fort_3.bin", "fram_fort_4.bin" ,"fram_fort_5.bin"] #Legg til filnavn
+fram_fort = ["fram_fort_1.bin", "fram_fort_2.bin", "fram_fort_3.bin", "fram_fort_4.bin" ,"fram_fort_5.bin"] #Legg til filnavn
+print("============================")
+print("Fram Fort, 0.51 m/s")
 FlereFiler(fram_fort)
 fram_speed = ["fram_speed_1.bin", "fram_speed_2.bin", "fram_speed_3.bin", "fram_speed_4.bin" ,"fram_speed_5.bin"] #Legg til filnavn
+print("============================")
+print("Fram speed, 1.64 m/s")
 FlereFiler(fram_speed)
 bak = ["bak_1.bin", "bak_2.bin", "bak_3.bin", "bak_4.bin" ,"bak_5.bin"] #Legg til filnavn   
-FlereFiler(bak) """
+print("============================")
+print("Bakover, -0.86 m/s")
+FlereFiler(bak)
