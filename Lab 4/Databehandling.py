@@ -41,7 +41,7 @@ def Regn_ut_FFT(data, filnavn):
     Dopler_shift = np.fft.fftshift(FFT_dopler) #1kHz sample rate
 
     freqs = np.fft.fftfreq(Nfft, 1/fs)
-    freqs = np.fft.fftshift(freqs)
+    freqs = (freqs)
     #FFT_dopler = FFT_dopler[:len(data)//2] #Kun halve spekteret
     return Dopler_shift, freqs
 
@@ -87,7 +87,6 @@ def Hanning(data, pad):
 
 
 def PSD(fft_av_signal, filnavn):
-    #X, freqs= Regn_ut_FFT(data, filnavn)
     Effekttetthetsspektrum = (abs(fft_av_signal)**2) #PSD
     PSD_log = 10*np.log10(Effekttetthetsspektrum)
     PSD_normalisert = PSD_log - np.max(PSD_log) #normalisering
@@ -98,8 +97,6 @@ def SNR(Effekttetthetsspektrum, filnavn):
 
     signal_sum = 0
     noise_sum = 0
-
-   
     N_noise = 0
     """ for i in range(len(Effekttetthetsspektrum)):
         if  np.argmax(Effekttetthetsspektrum)-3 < i < np.argmax(Effekttetthetsspektrum)+3:
@@ -122,14 +119,11 @@ def SNR(Effekttetthetsspektrum, filnavn):
     
     noise_sum_norm = noise_sum /N_noise
     SNR = 10*np.log10(np.abs(signal_sum / noise_sum_norm)) #signal_sum_norm / noise_sum_norm
-
     return SNR
 
 def radiell_hastighet(fft_dopler, freqs):
     index = np.argmax(fft_dopler)
     f_d = freqs[index]
-    #print(f_d)
-    #f_d = np.abs(f_d)
     f0 = 24*10**9 #Hz
     c = 3*10**8
     v_r = c*f_d/(2*f0)
