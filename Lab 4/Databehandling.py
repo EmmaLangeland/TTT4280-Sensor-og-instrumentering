@@ -225,19 +225,26 @@ def MAIN(filnavn):
     #Regne ut PSD
     Effekttetthetsspektrum, norm = PSD(FFT_dopler, filnavn)
     Effekttetthetsspektrum_pad, norm_pad = PSD(FFT_dopler_pad, filnavn)
-    effekt_spec_lineer = 10**(Effekttetthetsspektrum/10)
+    PSD_linear = 10**(Effekttetthetsspektrum/10)
+    PSD_linear_pad = 10**(Effekttetthetsspektrum_pad/10)
 
-    plt.plot(freqs, effekt_spec_lineer)
+    """ plt.plot(freqs, PSD_linear)
     plt.xlabel('Frekvens [Hz]')
     plt.ylabel('lineært spektrum')
     plt.title('Effekttetthetsspektrum')
+    plt.show() """
+
+    plt.plot(freqs_pad, PSD_linear_pad)
+    plt.xlabel('Frekvens [Hz]')
+    plt.ylabel('Relativ amplitude (lineært spektrum)')
+    plt.title('Effekttetthetsspektrum')
     plt.show()
 
-    plt.plot(freqs, norm)
+    plt.plot(freqs_pad, Effekttetthetsspektrum_pad)
     plt.xlabel('Frekvens [Hz]')
     plt.ylabel('Relativ amplitude [dB]')
     plt.title('Effekttetthetsspektrum')
-    plt.ylim(-80, 10)
+    plt.ylim(-30, 60)
     plt.show()
 
     """ plt.plot(freqs, norm)
@@ -266,10 +273,10 @@ def MAIN(filnavn):
     plt.show() """
 
     #Regne ut SNR
-    SNR_uten_pad = SNR(effekt_spec_lineer, filnavn)
-    SNR_pad = SNR(Effekttetthetsspektrum_pad, filnavn)
+    SNR_uten_pad = SNR(PSD_linear, filnavn)
+    SNR_pad = SNR(PSD_linear_pad, filnavn)
 
-    print(f"SNR uten padding: {10*np.log10(SNR_uten_pad)} \n SNR med padding: {SNR_pad}")
+    print(f"SNR uten padding: {10*np.log10(SNR_uten_pad)} \n SNR med padding: {10*np.log10(SNR_pad)}")
 
 
     """ v = radiell_hastighet(FFT_dopler, freqs)
@@ -281,10 +288,10 @@ def MAIN(filnavn):
 
 #================ Kjør Programmet =================
 #Kjør funksjonen for kun 1 fil
-""" MAIN("fram_fort_1.bin") """
+MAIN("bak_1.bin")
 
 #Kjør funksjonen for flere filer
-fram_fort = ["fram_fort_1.bin", "fram_fort_2.bin", "fram_fort_3.bin", "fram_fort_4.bin" ,"fram_fort_5.bin"] #Legg til filnavn
+""" fram_fort = ["fram_fort_1.bin", "fram_fort_2.bin", "fram_fort_3.bin", "fram_fort_4.bin" ,"fram_fort_5.bin"] #Legg til filnavn
 print("============================")
 print("Fram Fort, 0.51 m/s")
 FlereFiler(fram_fort)
@@ -295,4 +302,4 @@ FlereFiler(fram_speed)
 bak = ["bak_1.bin", "bak_2.bin", "bak_3.bin", "bak_4.bin" ,"bak_5.bin"] #Legg til filnavn   
 print("============================")
 print("Bakover, -0.86 m/s")
-FlereFiler(bak)
+FlereFiler(bak) """
